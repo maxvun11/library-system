@@ -1,0 +1,201 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f8f9fa;
+}
+
+/* Main Container */
+.main-container {
+    padding: 20px;
+}
+
+/* Cart Container */
+.cart-container {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.cart-items {
+    margin-bottom: 20px;
+}
+
+.cart-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.item-details h3 {
+    margin: 0;
+}
+
+.item-details p {
+    margin: 5px 0;
+}
+
+.remove-button {
+    background-color: #dc3545;
+    color: #fff;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.remove-button:hover {
+    background-color: #c82333;
+}
+
+.cart-total {
+    border-top: 1px solid #ddd;
+    padding-top: 20px;
+}
+
+.total-price {
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 5px;
+    text-align: right;
+}
+
+.total-price p {
+    margin: 5px 0;
+    font-weight: bold;
+}
+
+.purchase-button {
+    margin-top: 20px;
+    text-align: right;
+}
+
+.btn {
+    background-color: #4CAF50;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn:hover {
+    background-color: #45a049;
+}
+
+.back-link {
+    display: block;
+    margin-top: 20px;
+    text-decoration: none;
+    color: #333;
+}
+
+.back-link:hover {
+    color: #45a049;
+}
+
+nav {
+    background-color: #333;
+    display:flex;
+    
+}
+nav ul {
+    list-style-type: none;
+    margin: 5px 0;
+    padding: 10px 0;
+    display: flex;
+    justify-content: space-between;
+  }
+  
+nav ul li {
+    display: inline;
+    margin-right: 20px;
+  }
+  
+nav ul li a {
+    color: #fff;
+    text-decoration: none;
+    padding: 14px 16px;
+  }
+
+nav ul li a:hover {
+    background-color: #111;
+}
+
+.logo {
+    display:inline-block;
+    position: relative;
+}
+.logo img {
+    width: 50px; 
+    height: auto; 
+    margin-right: 10px; 
+}
+
+.logo img.animated-logo {
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0;
+}
+
+.logo:hover .static-logo {
+    opacity: 0;
+}
+
+.logo:hover .animated-logo {
+    opacity: 1;
+}
+  
+/* Fade animation for slides */
+.fade {
+    animation: fade 2s ease-out;
+}
+
+@keyframes fade {
+    from {
+        opacity: 0.4;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.dotters {
+    padding: 10px 0;
+}
+
+/* Styles for navigation dots */
+.dot {
+    width: 15px;
+    margin: 0 5px;
+    background-color: #bbb;
+    border-radius: 50%;
+    display: inline-block;
+    transition: background-color 0.3s;
+}
+  
+/* Active dot */
+.active {
+    background-color: #717171;
+}
+
+footer {
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    padding: 10px 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+}
+
+header {
+    background-color: #333;
+    color: #fff;
+    padding: 20px;
+    display: flex;
+}
