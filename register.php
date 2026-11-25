@@ -97,6 +97,7 @@ mysqli_close($mysqli);
       </div>
     </form>
   </div>
+  <p class="existing-account">Already have an account? <a class="login-button" href="login.php">Log in</a></p>
 
   <?php if ($registrationError !== ""): ?>
     <div class="error" role="alert"><?php echo htmlspecialchars($registrationError, ENT_QUOTES, 'UTF-8'); ?></div>

@@ -39,8 +39,37 @@ body {
 
 .actions {
     display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
     justify-content: flex-end;
+    gap: 12px;
     margin-top: 20px;
+}
+
+.exchange-request-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 240px;
+}
+
+.exchange-request-form label {
+    font-weight: bold;
+}
+
+.exchange-request-form select {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.exchange-login {
+    display: inline-block;
+    padding: 10px 16px;
+    border-radius: 4px;
+    background-color: #4CAF50;
+    color: #fff;
+    text-decoration: none;
 }
 
 .actions button,
@@ -73,6 +102,10 @@ body {
 .message.blue {
     background-color: #4CAF50;
     color: #fff;
+}
+
+.actions .message {
+    margin: 0;
 }
 
 nav {

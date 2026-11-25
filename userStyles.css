@@ -90,6 +90,49 @@ input[type="submit"]:hover {
   background-color: #ddd;
 }
 
+.exchange-message {
+  margin: 16px 0;
+  padding: 12px;
+  background-color: #eef7ee;
+  border-left: 4px solid #4CAF50;
+}
+
+.exchange-response {
+  max-width: 700px;
+  margin: 24px auto;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: #fff;
+}
+
+.exchange-offer {
+  display: block;
+  margin: 12px 0;
+}
+
+.exchange-response button {
+  margin: 8px 8px 0 0;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 4px;
+  background-color: #4CAF50;
+  color: #fff;
+  cursor: pointer;
+}
+
+.exchange-response button:hover {
+  background-color: #45a049;
+}
+
+.exchange-response .decline-button {
+  background-color: #b33a3a;
+}
+
+.exchange-response .decline-button:hover {
+  background-color: #922f2f;
+}
+
 .show {
   display: block;
 }
@@ -157,6 +200,19 @@ input[type=submit] {
   cursor: pointer;
   float: right;
   margin: 0 auto;
+}
+
+.register-button {
+  display: inline-block;
+  background-color: #04AA6D;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 4px;
+  text-decoration: none;
+}
+
+.register-button:hover {
+  background-color: #45a049;
 }
 
 .logo {

@@ -1,3 +1,4 @@
+<?php session_start(); ?>
 <!DOCTYPE html>
 <html>
 <head>
@@ -9,8 +10,6 @@
     <?php include('nav.php'); ?>
     <div class="main">
         <?php
-        session_start();
-
         if (isset($_GET['id'])) {
             // Retrieve the id value from the URL
             $id = (int) $_GET['id'];
@@ -33,6 +32,8 @@
         }
 
         $request = null;
+        $offerBooks = [];
+        $exchangeMessage = "";
         $sql = "SELECT * FROM book WHERE book_id=" . $id;
         $result = $conn->query($sql);
         $row = $result->fetch_assoc();
@@ -44,34 +45,61 @@
         $summary = $row["book_summary"];
         $author = $row["book_author"];
         $ownerId = $row["user_id"];
+        $bookStatus = $row["upload_status"];
 
         if (isset($_SESSION["username"])) {
-            if (isset($_POST["exchangeRequest"]) && $ownerId != $userId) {
-                $checkRequest = $conn->prepare("SELECT exchange_id FROM book_exchange WHERE book_id = ? AND user_id = ?");
-                $checkRequest->bind_param("ii", $id, $userId);
-                $checkRequest->execute();
-                $existingRequest = $checkRequest->get_result();
+            $checkRequest = $conn->prepare("SELECT exchange_id FROM book_exchange WHERE book_id = ? AND user_id = ?");
+            $checkRequest->bind_param("ii", $id, $userId);
+            $checkRequest->execute();
+            $request = $checkRequest->get_result()->num_rows > 0 ? "pending" : null;
+            $checkRequest->close();
 
-                if ($existingRequest->num_rows === 0) {
-                    $insertRequest = $conn->prepare("INSERT INTO book_exchange (book_id, user_id) VALUES (?, ?)");
-                    $insertRequest->bind_param("ii", $id, $userId);
-                    if ($insertRequest->execute()) {
-                        $request = "pending";
-                    } else {
-                        echo "<p class='message'>Could not send exchange request: " . htmlspecialchars($insertRequest->error, ENT_QUOTES, "UTF-8") . "</p>";
-                    }
-                    $insertRequest->close();
+            if ($ownerId != $userId) {
+                $offerStatement = $conn->prepare(
+                    "SELECT book_id, book_title FROM book
+                     WHERE user_id = ? AND upload_status = 'accomplished'
+                     ORDER BY book_title"
+                );
+                $offerStatement->bind_param("i", $userId);
+                $offerStatement->execute();
+                $offerBooks = $offerStatement->get_result()->fetch_all(MYSQLI_ASSOC);
+                $offerStatement->close();
+            }
+
+            if (isset($_POST["exchangeRequest"])) {
+                if ($ownerId == $userId) {
+                    $exchangeMessage = "You cannot exchange your own book.";
+                } elseif ($bookStatus !== "accomplished") {
+                    $exchangeMessage = "Only listed books can be requested for exchange.";
+                } elseif ($request === "pending") {
+                    $exchangeMessage = "You have already requested this book.";
                 } else {
-                    $request = "pending";
-                }
+                    $offeredBookId = (int) ($_POST["offeredBookId"] ?? 0);
+                    $validOfferStatement = $conn->prepare(
+                        "SELECT book_id FROM book
+                         WHERE book_id = ? AND user_id = ? AND upload_status = 'accomplished'"
+                    );
+                    $validOfferStatement->bind_param("ii", $offeredBookId, $userId);
+                    $validOfferStatement->execute();
+                    $validOffer = $validOfferStatement->get_result()->num_rows > 0;
+                    $validOfferStatement->close();
 
-                $checkRequest->close();
-            } else {
-                $checkRequest = $conn->prepare("SELECT exchange_id FROM book_exchange WHERE book_id = ? AND user_id = ?");
-                $checkRequest->bind_param("ii", $id, $userId);
-                $checkRequest->execute();
-                $request = $checkRequest->get_result()->num_rows > 0 ? "pending" : null;
-                $checkRequest->close();
+                    if (!$validOffer) {
+                        $exchangeMessage = "Choose one of your listed books to offer.";
+                    } else {
+                        $insertRequest = $conn->prepare(
+                            "INSERT INTO book_exchange (book_id, user_id, offered_book_id) VALUES (?, ?, ?)"
+                        );
+                        $insertRequest->bind_param("iii", $id, $userId, $offeredBookId);
+                        if ($insertRequest->execute()) {
+                            $request = "pending";
+                            $exchangeMessage = "Exchange request sent.";
+                        } else {
+                            $exchangeMessage = "Could not send exchange request: " . $insertRequest->error;
+                        }
+                        $insertRequest->close();
+                    }
+                }
             }
         }
         
@@ -80,6 +108,9 @@
         <div class="book-details">
             <h1><?php echo $title; ?></h1>
             <p><?php echo $summary; ?></p>
+            <?php if ($exchangeMessage !== ""): ?>
+                <p class="message"><?php echo htmlspecialchars($exchangeMessage, ENT_QUOTES, "UTF-8"); ?></p>
+            <?php endif; ?>
             <div class="details">
                 <div class="detail">
                     <span class="label">Author:</span>
@@ -87,11 +118,11 @@
                 </div>
                 <div class="detail">
                     <span class="label">Condition:</span>
-                    <span class="value"><?php echo $condition; ?></span>
+                    <span class="value"><?php echo htmlspecialchars($condition ?? "Not specified", ENT_QUOTES, "UTF-8"); ?></span>
                 </div>
                 <div class="detail">
                     <span class="label">Rating:</span>
-                    <span class="value"><?php echo $rate; ?></span>
+                    <span class="value"><?php echo htmlspecialchars($rate ?? "Not rated", ENT_QUOTES, "UTF-8"); ?></span>
                 </div>
                 <div class="detail">
                     <span class="label">Age:</span>
@@ -103,9 +134,30 @@
                 </div>
             </div>
             <div class="actions">
-                <form method="post">
-                    <button id="exchange" type="submit" name="exchangeRequest" value="1">Exchange Book</button>
-                </form>
+                <?php if ($request === "pending"): ?>
+                    <p class="message blue">Exchange request is pending.</p>
+                <?php elseif ($username === ""): ?>
+                    <a class="exchange-login" href="login.php">Log in to request an exchange</a>
+                <?php elseif ($ownerId == $userId): ?>
+                    <p class="message">This is your book.</p>
+                <?php elseif ($bookStatus !== "accomplished"): ?>
+                    <p class="message">Only listed books can be exchanged.</p>
+                <?php elseif (count($offerBooks) === 0): ?>
+                    <p class="message">You need a book listed in the catalog before requesting an exchange.</p>
+                <?php else: ?>
+                    <form method="post" class="exchange-request-form">
+                        <label for="offeredBookId">Choose one of your books to offer:</label>
+                        <select id="offeredBookId" name="offeredBookId" required>
+                            <option value="">Choose a book</option>
+                            <?php foreach ($offerBooks as $offerBook): ?>
+                                <option value="<?php echo (int) $offerBook['book_id']; ?>">
+                                    <?php echo htmlspecialchars($offerBook['book_title'], ENT_QUOTES, "UTF-8"); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <button id="exchange" type="submit" name="exchangeRequest" value="1">Request exchange</button>
+                    </form>
+                <?php endif; ?>
                 <form method="post" action="itemDetailPage.php?id=<?php echo $id; ?>">
                     <input type="submit" name="addCart" value="Add To Cart">
                 </form>
@@ -117,7 +169,11 @@
             if (!isset($_SESSION['cart' . $userId])) {
                 $_SESSION['cart' . $userId] = array();
             }
-            if ($ownerId != $userId) {
+            if ($bookStatus !== "accomplished") {
+                if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['addCart']) && $_POST['addCart'] == 'Add To Cart') {
+                    echo "<p class='message'>This book is no longer available.</p>";
+                }
+            } elseif ($ownerId != $userId) {
                 if (!in_array($id, $_SESSION['cart' . $userId])) {
                     if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['addCart']) && $_POST['addCart'] == 'Add To Cart') {
                         $_SESSION['cart' . $userId][] = $id;
@@ -136,39 +192,6 @@
             }
         }
         ?>
-        <script>
-            let book_id = "<?php echo "$id"?>";
-            let username = "<?php echo "$username" ?>";
-            let userId = "<?php echo "$userId" ?>";
-            let ownerId = "<?php echo "$ownerId" ?>";
-            let request = "<?php echo "$request" ?>";
-            const body = document.body;
-            const exchange = document.getElementById("exchange");
-
-            if (request == "pending") {
-                exchange.remove();
-                const promp = document.createElement("p");
-                promp.textContent = "Exchange request is sent";
-                promp.classList.add("message", "blue");
-                body.appendChild(promp);
-            } else {
-                exchange.addEventListener("click", (event) => {
-                    if (!username) {
-                            event.preventDefault();
-                        const promp = document.createElement("p");
-                        promp.textContent = "Please login";
-                        promp.classList.add("message", "red");
-                        body.appendChild(promp);
-                    } else if (userId == ownerId) {
-                            event.preventDefault();
-                        const promp = document.createElement("p");
-                        promp.textContent = "Cannot exchange your own book";
-                        promp.classList.add("message", "red");
-                        body.appendChild(promp);
-                    }
-                });
-            }
-        </script>
     </div>
     <?php include 'footer.php'; ?> 
 </body>
