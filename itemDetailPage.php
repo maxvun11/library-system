@@ -13,15 +13,13 @@
 
         if (isset($_GET['id'])) {
             // Retrieve the id value from the URL
-            $id = $_GET['id'];
+            $id = (int) $_GET['id'];
         } else {
             echo "No id is found.";
         }
 
-        if (isset($_SESSION["username"])) {
-            $username = $_SESSION["username"];
-            $userId = $_SESSION["userId"];
-        }
+        $username = $_SESSION["username"] ?? "";
+        $userId = $_SESSION["userId"] ?? 0;
 
         $db_host = 'localhost';
         $db_username = 'root';
@@ -34,16 +32,7 @@
             die("Connection failed: " . $conn->connect_error);
         }
 
-        if (isset($_SESSION["username"])) {
-            $sqlExchange = "SELECT * FROM book_exchange WHERE book_id=$id AND user_id=$userId";
-            $resultExchange = $conn->query($sqlExchange);
-            $request = null;
-
-            if ($resultExchange->num_rows > 0) {
-                $rowExchange = $resultExchange->fetch_assoc();
-                $request = $rowExchange["request_status"];
-            }
-        }
+        $request = null;
         $sql = "SELECT * FROM book WHERE book_id=" . $id;
         $result = $conn->query($sql);
         $row = $result->fetch_assoc();
@@ -55,6 +44,36 @@
         $summary = $row["book_summary"];
         $author = $row["book_author"];
         $ownerId = $row["user_id"];
+
+        if (isset($_SESSION["username"])) {
+            if (isset($_POST["exchangeRequest"]) && $ownerId != $userId) {
+                $checkRequest = $conn->prepare("SELECT exchange_id FROM book_exchange WHERE book_id = ? AND user_id = ?");
+                $checkRequest->bind_param("ii", $id, $userId);
+                $checkRequest->execute();
+                $existingRequest = $checkRequest->get_result();
+
+                if ($existingRequest->num_rows === 0) {
+                    $insertRequest = $conn->prepare("INSERT INTO book_exchange (book_id, user_id) VALUES (?, ?)");
+                    $insertRequest->bind_param("ii", $id, $userId);
+                    if ($insertRequest->execute()) {
+                        $request = "pending";
+                    } else {
+                        echo "<p class='message'>Could not send exchange request: " . htmlspecialchars($insertRequest->error, ENT_QUOTES, "UTF-8") . "</p>";
+                    }
+                    $insertRequest->close();
+                } else {
+                    $request = "pending";
+                }
+
+                $checkRequest->close();
+            } else {
+                $checkRequest = $conn->prepare("SELECT exchange_id FROM book_exchange WHERE book_id = ? AND user_id = ?");
+                $checkRequest->bind_param("ii", $id, $userId);
+                $checkRequest->execute();
+                $request = $checkRequest->get_result()->num_rows > 0 ? "pending" : null;
+                $checkRequest->close();
+            }
+        }
         
         ?>
 
@@ -84,7 +103,9 @@
                 </div>
             </div>
             <div class="actions">
-                <button id="exchange">Exchange Book</button>
+                <form method="post">
+                    <button id="exchange" type="submit" name="exchangeRequest" value="1">Exchange Book</button>
+                </form>
                 <form method="post" action="itemDetailPage.php?id=<?php echo $id; ?>">
                     <input type="submit" name="addCart" value="Add To Cart">
                 </form>
@@ -131,19 +152,19 @@
                 promp.classList.add("message", "blue");
                 body.appendChild(promp);
             } else {
-                exchange.addEventListener("click", () => {
-                    if (username === undefined) {
+                exchange.addEventListener("click", (event) => {
+                    if (!username) {
+                            event.preventDefault();
                         const promp = document.createElement("p");
                         promp.textContent = "Please login";
                         promp.classList.add("message", "red");
                         body.appendChild(promp);
                     } else if (userId == ownerId) {
+                            event.preventDefault();
                         const promp = document.createElement("p");
                         promp.textContent = "Cannot exchange your own book";
                         promp.classList.add("message", "red");
                         body.appendChild(promp);
-                    } else {
-                        window.location.href = "http://localhost/AssignmentTest1/exchange.php?id=" + book_id;
                     }
                 });
             }

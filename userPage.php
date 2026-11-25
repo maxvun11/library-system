@@ -94,6 +94,11 @@
 
     echo "<h2>Uploaded Book List</h2>";
 
+    $exUser_id = [];
+    $exchange_id = [];
+    $exchange_username = [];
+    $exchange_bookTitle = [];
+
     if (isset($_SESSION['username'])){
         $sqlUserId = "SELECT user_id FROM user WHERE username = '$_SESSION[username]'";
         $userIdQueryResult = $conn -> query($sqlUserId);
@@ -186,7 +191,7 @@
 
     for(var i = 0; i < exUsername.length; i++) {
         const request_user = document.createElement('a');
-        request_user.href = "/AssignmentTest1/userPage.php?exId=" + exchangeId[i] + "&exUserId=" + exUserId[i];
+        request_user.href = "userPage.php?exId=" + exchangeId[i] + "&exUserId=" + exUserId[i];
         request_user.innerHTML = exUsername[i] + "\n" + exBookTitle[i];
         droplist.appendChild(request_user);
     }

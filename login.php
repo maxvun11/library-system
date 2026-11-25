@@ -43,7 +43,7 @@
         ?>
                         <script>
                             window.alert("Login successful.");
-                            window.location.href= "/Assignment/";
+                            window.location.href= "index.php";
                         </script>
         <?php
                         }
